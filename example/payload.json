@@ -1,0 +1,13 @@
+{
+  "event_name": "user.created",
+  "data": {
+    "user_id": "12345",
+    "user_name": "john_doe",
+    "email": "john@example.com",
+    "timestamp": "2025-07-29T10:30:00Z"
+  },
+  "metadata": {
+    "source": "api",
+    "version": "1.0"
+  }
+}

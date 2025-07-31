@@ -1,0 +1,17 @@
+{
+  "name": "user.created",
+  "serviceName": "user-service",
+  "repoUrl": "https://github.com/example/user-service",
+  "teamOwner": "CLI",
+  "triggers": [
+    {
+      "serviceName": "notification-service",
+      "type": "http",
+      "host": "http://localhost:8081",
+      "path": "/notifications/new-user",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  ]
+}
