@@ -1,0 +1,167 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  BINARY_NAME: workqueue
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
+        exclude:
+          # Windows arm64 builds might have issues, remove if needed
+          - goos: windows
+            goarch: arm64
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23.2'
+
+    - name: Get version
+      id: version
+      run: |
+        if [[ $GITHUB_REF == refs/tags/* ]]; then
+          VERSION=${GITHUB_REF#refs/tags/}
+        else
+          VERSION=dev-$(git rev-parse --short HEAD)
+        fi
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Building version: $VERSION"
+
+    - name: Build binary
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+        CGO_ENABLED: 0
+      run: |
+        # Set binary name based on OS
+        BINARY="${BINARY_NAME}-${{ matrix.goos }}-${{ matrix.goarch }}"
+        if [ "${{ matrix.goos }}" = "windows" ]; then
+          BINARY="${BINARY}.exe"
+        fi
+        
+        # Build with version info
+        go build \
+          -ldflags="-s -w -X main.Version=${{ steps.version.outputs.VERSION }} -X main.GitCommit=$(git rev-parse --short HEAD) -X main.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+          -o "$BINARY" \
+          ./cmd/cli/main.go
+        
+        echo "Built binary: $BINARY"
+        echo "BINARY_PATH=$BINARY" >> $GITHUB_ENV
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.BINARY_PATH }}
+        path: ${{ env.BINARY_PATH }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: ./artifacts
+
+    - name: Prepare release assets
+      run: |
+        mkdir -p ./release
+        for artifact in ./artifacts/*/; do
+          binary=$(basename "$artifact")
+          cp "$artifact/$binary" "./release/$binary"
+        done
+        ls -la ./release/
+
+    - name: Generate checksums
+      run: |
+        cd ./release
+        sha256sum * > checksums.txt
+        cat checksums.txt
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ./release/*
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        body: |
+          ## WorkQueueCLI ${{ github.ref_name }}
+          
+          ### Installation
+          
+          #### Quick Install:
+          ```bash
+          # macOS/Linux
+          curl -fsSL https://raw.githubusercontent.com/IsaacDSC/WorkQueueCLI/main/install.sh | bash
+          
+          # Windows PowerShell
+          iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/IsaacDSC/WorkQueueCLI/main/install.ps1'))
+          ```
+          
+          #### Manual Download:
+          1. Download the appropriate binary for your platform below
+          2. Rename it to `workqueue` (or `workqueue.exe` on Windows)  
+          3. Make it executable: `chmod +x workqueue`
+          4. Move to a directory in your PATH: `sudo mv workqueue /usr/local/bin/`
+          
+          ### Platform Downloads:
+          - **Linux 64-bit**: `workqueue-linux-amd64`
+          - **Linux ARM64**: `workqueue-linux-arm64`  
+          - **macOS Intel**: `workqueue-darwin-amd64`
+          - **macOS Apple Silicon**: `workqueue-darwin-arm64`
+          - **Windows 64-bit**: `workqueue-windows-amd64.exe`
+          
+          ### Verification
+          All binaries are checksummed in `checksums.txt`. Verify with:
+          ```bash
+          sha256sum -c checksums.txt
+          ```
+          
+          ### Usage
+          ```bash
+          workqueue --version
+          workqueue event --help
+          ```
+          
+          See the [README](https://github.com/IsaacDSC/WorkQueueCLI/blob/main/README.md) for detailed usage instructions.
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test-install:
+    needs: release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - name: Test installation script
+      run: |
+        # Test the installation script works with the new release
+        curl -fsSL https://raw.githubusercontent.com/IsaacDSC/WorkQueueCLI/main/install.sh | bash
+        
+        # Verify installation
+        workqueue --version
+        workqueue event --help

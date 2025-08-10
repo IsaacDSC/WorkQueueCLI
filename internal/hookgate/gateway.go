@@ -83,7 +83,7 @@ func RegisterTrigger(ctx context.Context, host string, payload BulkEventDto) err
 	return makeHTTPRequest(ctx, "POST", url, payload)
 }
 
-func RegisterConsumer(ctx context.Context, host string, payload BulkEventDto) error {
+func RegisterConsumer(ctx context.Context, host string, payload map[string]any) error {
 	url := fmt.Sprintf("%s/event/consumer", host)
 	return makeHTTPRequest(ctx, "POST", url, payload)
 }

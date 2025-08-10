@@ -1,0 +1,24 @@
+{
+  "name": "user.created",
+  "service_name": "user-service",
+  "repo_url": "https://github.com/example/user-service",
+  "team_owner": "CLI",
+  "triggers": [
+    {
+      "service_name": "notification-service",
+      "type": "persistent",
+      "host": "http://localhost:8081",
+      "path": "/notifications/new-user",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "option": {
+        "queue_type": "external.medium",
+        "max_retries": 3,
+        "schedule_in": "5m",
+        "retention": "168h",
+        "unique_ttl": "60s"
+      }
+    }
+  ]
+}

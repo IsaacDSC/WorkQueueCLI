@@ -16,27 +16,47 @@ A command-line interface for managing webhook events and consumers in a work que
 
 ## Installation
 
+### Quick Install (Recommended)
+
+#### macOS and Linux:
+```bash
+curl -fsSL https://raw.githubusercontent.com/IsaacDSC/WorkQueueCLI/main/install.sh | bash
+```
+
+#### Windows:
+```powershell
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/IsaacDSC/WorkQueueCLI/main/install.ps1'))
+```
+
+### Alternative Installation Methods
+
+#### Using Makefile:
+```bash
+git clone https://github.com/IsaacDSC/WorkQueueCLI.git
+cd WorkQueueCLI
+make install
+```
+
+#### Manual Installation:
 1. Clone the repository:
    ```bash
    git clone https://github.com/IsaacDSC/WorkQueueCLI.git
    cd WorkQueueCLI
    ```
 
-2. Build the project:
+2. Build and install:
    ```bash
-   go build -o workqueue-cli ./cmd/cli/main.go
+   go build -o workqueue ./cmd/cli/main.go
+   sudo mv workqueue /usr/local/bin/  # macOS/Linux
    ```
 
-   Or run directly with Go:
-   ```bash
-   go run ./cmd/cli/main.go
-   ```
+For detailed installation instructions, platform-specific guides, and troubleshooting, see [INSTALL.md](INSTALL.md).
 
 ## Usage
 
 The CLI follows this general pattern:
 ```bash
-go run ./cmd/cli/main.go event [--host <host>] <subcommand> [options]
+workqueue event [--host <host>] <subcommand> [options]
 ```
 
 ### Available Commands
@@ -45,7 +65,7 @@ go run ./cmd/cli/main.go event [--host <host>] <subcommand> [options]
 Register a new event with the webhook gateway:
 
 ```bash
-go run ./cmd/cli/main.go event --host "http://localhost:8080" add-event --name "Sample Event" --serviceName "user-service" --repoUrl "https://github.com/example/repo"
+workqueue event --host "http://localhost:8080" add-event --name "Sample Event" --serviceName "user-service" --repoUrl "https://github.com/example/repo"
 ```
 
 **Parameters:**
@@ -58,7 +78,7 @@ go run ./cmd/cli/main.go event --host "http://localhost:8080" add-event --name "
 Register a webhook consumer that listens to specific events:
 
 ```bash
-go run ./cmd/cli/main.go event --host "http://localhost:8080" add-consumer --json_file ./example/consumer.json
+workqueue event --host "http://localhost:8080" add-consumer --json_file ./example/consumer.json
 ```
 
 **Parameters:**
@@ -69,12 +89,21 @@ go run ./cmd/cli/main.go event --host "http://localhost:8080" add-consumer --jso
 Send a test event to verify webhook delivery:
 
 ```bash
-go run ./cmd/cli/main.go event --host "http://localhost:8080" test-producer --json_file ./example/payload.json
+workqueue event --host "http://localhost:8080" test-producer --json_file ./example/payload.json
 ```
 
 **Parameters:**
 - `--host`: Gateway host URL (optional, defaults to `http://localhost:8080`)
 - `--json_file`: Path to JSON file containing event payload
+
+#### 4. Version Information
+Display version and build information:
+
+```bash
+workqueue version
+# or
+workqueue --version
+```
 
 ## Configuration Files
 
@@ -143,14 +172,19 @@ Defines the structure of an event to be sent:
 
 ### Quick Start
 
-1. **Register a consumer** to listen for `user.created` events:
+1. **Install WorkQueueCLI**:
    ```bash
-   go run ./cmd/cli/main.go event add-consumer --json_file ./example/consumer.json
+   curl -fsSL https://raw.githubusercontent.com/IsaacDSC/WorkQueueCLI/main/install.sh | bash
    ```
 
-2. **Test event delivery** by sending a sample event:
+2. **Register a consumer** to listen for `user.created` events:
    ```bash
-   go run ./cmd/cli/main.go event test-producer --json_file ./example/payload.json
+   workqueue event add-consumer --json_file ./example/consumer.json
+   ```
+
+3. **Test event delivery** by sending a sample event:
+   ```bash
+   workqueue event test-producer --json_file ./example/payload.json
    ```
 
 ### Custom Host
@@ -158,17 +192,18 @@ Defines the structure of an event to be sent:
 If your webhook gateway is running on a different host:
 
 ```bash
-go run ./cmd/cli/main.go event --host "https://your-webhook-gateway.com" add-consumer --json_file ./example/consumer.json
+workqueue event --host "https://your-webhook-gateway.com" add-consumer --json_file ./example/consumer.json
 ```
 
 ### Building for Distribution
 ```bash
-# Build for current platform
-go build -o workqueue-cli ./cmd/cli/main.go
+# Using Makefile (recommended)
+make build-all  # Builds for all platforms
 
-# Cross-compile for different platforms
-GOOS=linux GOARCH=amd64 go build -o workqueue-cli-linux ./cmd/cli/main.go
-GOOS=windows GOARCH=amd64 go build -o workqueue-cli-windows.exe ./cmd/cli/main.go
+# Manual cross-compilation
+GOOS=linux GOARCH=amd64 go build -o workqueue-linux ./cmd/cli/main.go
+GOOS=windows GOARCH=amd64 go build -o workqueue-windows.exe ./cmd/cli/main.go
+GOOS=darwin GOARCH=amd64 go build -o workqueue-darwin ./cmd/cli/main.go
 ```
 ## Contributing
 

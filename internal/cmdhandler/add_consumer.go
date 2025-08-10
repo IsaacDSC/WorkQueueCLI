@@ -24,7 +24,7 @@ func handleAddConsumer(ctx context.Context, host string) {
 		return
 	}
 
-	var payload hookgate.BulkEventDto
+	var payload map[string]any
 	if err := json.Unmarshal(data, &payload); err != nil {
 		fmt.Printf("Error parsing JSON: %v\n", err)
 		return

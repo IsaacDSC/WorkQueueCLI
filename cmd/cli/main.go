@@ -8,6 +8,13 @@ import (
 	"github.com/IsaacDSC/WorkQueueCLI/internal/help"
 )
 
+// Version information (set by build flags)
+var (
+	Version   = "dev"
+	GitCommit = "unknown"
+	BuildDate = "unknown"
+)
+
 // Example command create event:
 // go run cmd/cli/main.go event --host "http://localhost:8080" add-event --name "Sample Event" --serviceName "This is a sample event" --repoUrl "https://github.com/example/repo"
 
@@ -30,8 +37,18 @@ func main() {
 	switch command {
 	case "event":
 		cmdhandler.Exec(defaultHost)
+	case "version", "--version", "-v":
+		printVersion()
+	case "help", "--help", "-h":
+		help.PrintUsage()
 	default:
 		fmt.Printf("Unknown command: %s\n", command)
 		help.PrintUsage()
 	}
+}
+
+func printVersion() {
+	fmt.Printf("WorkQueueCLI %s\n", Version)
+	fmt.Printf("Git commit: %s\n", GitCommit)
+	fmt.Printf("Build date: %s\n", BuildDate)
 }

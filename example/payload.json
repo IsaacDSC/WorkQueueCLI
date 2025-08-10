@@ -9,5 +9,12 @@
   "metadata": {
     "source": "api",
     "version": "1.0"
+  },
+  "opts": {
+    "max_retries": 5,
+    "schedule_in": "1m",
+    "retention": "1h",
+    "unique_ttl": "60s",
+    "queue_type": "internal.medium"
   }
 }
